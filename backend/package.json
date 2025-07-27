@@ -1,0 +1,44 @@
+{
+  "name": "excel-processor-backend",
+  "version": "1.0.0",
+  "description": "Excel数据处理后端服务",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "build": "pkg . --output ../dist/excel-processor",
+    "build:win": "pkg . --targets node18-win-x64 --output ../dist/excel-processor-win.exe",
+    "build:mac": "pkg . --targets node18-macos-x64 --output ../dist/excel-processor-mac",
+    "build:linux": "pkg . --targets node18-linux-x64 --output ../dist/excel-processor-linux"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.4-lts.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "xlsx": "^0.18.5",
+    "lowdb": "^6.0.1",
+    "fs-extra": "^11.1.1",
+    "uuid": "^9.0.1",
+    "socket.io": "^4.7.4",
+    "exceljs": "^4.4.0",
+    "redis": "^4.6.12",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "data/**/*",
+      "uploads/**/*", 
+      "public/**/*"
+    ],
+    "outputPath": "../dist"
+  },
+  "keywords": ["excel", "data-visualization", "vue3", "nodejs"],
+  "author": "Your Name",
+  "license": "MIT"
+} 
