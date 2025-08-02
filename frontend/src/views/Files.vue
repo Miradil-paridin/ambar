@@ -203,6 +203,7 @@ const loadFiles = async () => {
     console.log('🔍 第一个文件的ID:', files.value[0]?.id)
   } catch (error) {
     console.error('加载文件列表失败:', error)
+    ElMessage.error('加载文件列表失败')
   } finally {
     loading.value = false
   }
@@ -233,6 +234,7 @@ const handleUpload = async () => {
     await loadFiles()
   } catch (error) {
     console.error('文件上传失败:', error)
+    ElMessage.error('文件上传失败')
   } finally {
     uploading.value = false
   }
@@ -245,20 +247,38 @@ const resetUpload = () => {
 }
 
 // 预览文件
-const previewFile = async (file: FileInfo) => {
+const previewFile = async (fileId: string) => {
   try {
+    console.log('🔍 预览文件ID:', fileId)
+    // 根据fileId找到对应的文件信息
+    const file = files.value.find(f => f.id === fileId)
+    if (!file) {
+      ElMessage.error('文件不存在')
+      return
+    }
+    
+    if (!file.sheetNames || file.sheetNames.length === 0) {
+      ElMessage.error('文件数据不完整，无法预览')
+      return
+    }
+    
     previewData.value = file
     activeSheet.value = file.sheetNames[0]
     previewDialogVisible.value = true
     await loadSheetData(activeSheet.value)
   } catch (error) {
     console.error('预览文件失败:', error)
+    ElMessage.error('预览文件失败')
   }
 }
 
 // 打开协作编辑器
-const openCollaborativeEditor = (file: FileInfo) => {
-  router.push(`/collaborative/${file.id}`)
+const openCollaborativeEditor = (fileId: string) => {
+  if (!fileId) {
+    ElMessage.error('文件ID无效')
+    return
+  }
+  router.push(`/collaborative/${fileId}`)
 }
 
 // 打开新的 x-data-spreadsheet 编辑器
@@ -272,16 +292,29 @@ const editFile = (fileId: string) => {
 }
 
 // 创建可视化
-const createVisualization = (file: FileInfo) => {
-  router.push(`/visualization/${file.id}`)
+const createVisualization = (fileId: string) => {
+  if (!fileId) {
+    ElMessage.error('文件ID无效')
+    return
+  }
+  router.push(`/visualization/${fileId}`)
 }
 
 // 加载工作表数据
 const loadSheetData = async (sheetName: string) => {
-  if (!previewData.value) return
+  if (!previewData.value) {
+    console.warn('预览数据为空')
+    return
+  }
 
   try {
     const sheetIndex = previewData.value.sheetNames.indexOf(sheetName)
+    if (sheetIndex === -1) {
+      console.error('工作表不存在:', sheetName)
+      ElMessage.error('工作表不存在')
+      return
+    }
+
     const response = await filesAPI.getData(previewData.value.id, {
       sheet: sheetIndex,
       limit: 99999 // 获取所有数据用于预览
@@ -289,12 +322,21 @@ const loadSheetData = async (sheetName: string) => {
 
     sheetData.value = response
     
+    // 安全检查数据格式
+    if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+      console.warn('响应数据为空或格式不正确:', response)
+      displayData.value = []
+      return
+    }
+    
     // 转换数据格式用于表格显示
     displayData.value = response.data.slice(1).map(row => {
       const obj: any = {}
-      row.forEach((cell, index) => {
-        obj[index] = cell
-      })
+      if (Array.isArray(row)) {
+        row.forEach((cell, index) => {
+          obj[index] = cell
+        })
+      }
       return obj
     })
   } catch (error) {
